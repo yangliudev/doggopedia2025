@@ -92,8 +92,8 @@ android {
         applicationId 'com.doggopedia'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0.0"
+        versionCode 10
+        versionName "1.0.10"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -104,15 +104,24 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            def credentialsFile = rootProject.file("../credentials.json")
+            if (credentialsFile.exists()) {
+                def credentialsData = new groovy.json.JsonSlurper().parse(credentialsFile)
+                storeFile rootProject.file(credentialsData.android.keystore.keystorePath)
+                storePassword credentialsData.android.keystore.keystorePassword
+                keyAlias credentialsData.android.keystore.keyAlias
+                keyPassword credentialsData.android.keystore.keyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Using the release signing configuration
+            signingConfig signingConfigs.release
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
