@@ -18,65 +18,100 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function DogDetailScreen() {
   const { name } = useLocalSearchParams();
+  const colorScheme = useColorScheme();
+  const dogName = Array.isArray(name) ? name[0] : name || "";
+
+  // State variables
   const [dogInfo, setDogInfo] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isImageLoading, setIsImageLoading] = useState<boolean>(true);
-  const colorScheme = useColorScheme();
-  const dogName = Array.isArray(name) ? name[0] : name || "";
+  const [dogImageUrl, setDogImageUrl] = useState<string | null>(null);
+  const [imageLoadingState, setImageLoadingState] = useState<
+    "loading" | "loaded" | "error"
+  >("loading");
 
   // Define all API-related functions with useCallback
   const getDogInfoFromApi = useCallback(() => {
     setIsLoading(true);
+    const apiUrl = `https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${dogName}&origin=*`;
 
     axios
-      .get(
-        `https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${encodeURIComponent(
-          dogName
-        )}&origin=*`
-      )
+      .get(apiUrl, {
+        headers: {
+          "User-Agent": "Doggopedia/1.0 (educational project)",
+        },
+      })
       .then((response) => {
-        if (response.data && response.data.query && response.data.query.pages) {
+        if (response.data?.query?.pages) {
           const responseData = response.data.query.pages;
           const values = Object.values(responseData) as { extract?: string }[];
-          const extractValue = values[0]?.extract || "No info available.";
+          const extractValue =
+            values[0]?.extract ||
+            "No information available for this dog breed.";
           setDogInfo(extractValue);
         } else {
-          setDogInfo("No info available.");
+          setDogInfo("No information available for this dog breed.");
         }
         setIsLoading(false);
       })
-      .catch((error) => {
-        console.log("getDogInfoFromApi() error is ", error);
-        setDogInfo("Error loading information. Please try again.");
+      .catch(() => {
+        setDogInfo(
+          "Unable to load information. Please check your connection and try again."
+        );
         setIsLoading(false);
       });
   }, [dogName]);
 
   const getWikipediaImage = useCallback(() => {
-    setIsImageLoading(true);
+    setImageLoadingState("loading");
+    const imageApiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
+      dogName
+    )}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
 
     axios
-      .get(
-        `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
-          dogName
-        )}&prop=pageimages&format=json&pithumbsize=300&origin=*`
-      )
+      .get(imageApiUrl, {
+        headers: {
+          "User-Agent": "Doggopedia/1.0 (educational project)",
+        },
+      })
       .then((response) => {
-        if (response.data && response.data.query && response.data.query.pages) {
-          const data = response.data.query.pages;
-          const firstKey = Object.keys(data)[0];
-          const imgUrl = data[firstKey]?.thumbnail?.source;
-          if (imgUrl) {
-            setImageUrl(imgUrl);
+        if (response.data?.query?.pages) {
+          const pages = response.data.query.pages;
+          const pageId = Object.keys(pages)[0];
+
+          if (pageId && pages[pageId]?.thumbnail?.source) {
+            // Get Wikipedia image URL
+            const wikiImageUrl = pages[pageId].thumbnail.source;
+
+            try {
+              // Extract the image filename from URL
+              const matches = wikiImageUrl.match(/\/([^\/]+)\/([^\/]+)$/);
+              if (matches && matches[1] && matches[2]) {
+                // Remove size prefix from filename
+                const sizePrefixRemoved = matches[2].replace(/^\d+px-/, "");
+                // Use image proxy service for better React Native compatibility
+                const proxyUrl = `https://wsrv.nl/?url=https://commons.wikimedia.org/wiki/Special:FilePath/${sizePrefixRemoved}&w=500&h=400&fit=cover&output=webp`;
+                setDogImageUrl(proxyUrl);
+              } else {
+                setDogImageUrl(wikiImageUrl);
+              }
+            } catch (err) {
+              setDogImageUrl(wikiImageUrl); // Fallback to original URL
+            }
+
+            setImageLoadingState("loaded");
+          } else {
+            setDogImageUrl(null);
+            setImageLoadingState("error");
           }
+        } else {
+          setDogImageUrl(null);
+          setImageLoadingState("error");
         }
-        setIsImageLoading(false);
       })
       .catch((error) => {
-        console.log("getWikipediaImage() error is ", error);
-        setIsImageLoading(false);
+        setDogImageUrl(null);
+        setImageLoadingState("error");
       });
   }, [dogName]);
 
@@ -87,8 +122,8 @@ export default function DogDetailScreen() {
         const favorites = JSON.parse(savedFavorites);
         setIsFavorite(favorites.includes(dogName));
       }
-    } catch (error) {
-      console.error("Error checking favorites:", error);
+    } catch {
+      // Silent error - non-critical functionality
     }
   }, [dogName]);
 
@@ -107,8 +142,8 @@ export default function DogDetailScreen() {
 
       await AsyncStorage.setItem("dogFavorites", JSON.stringify(favorites));
       setIsFavorite(!isFavorite);
-    } catch (error) {
-      console.error("Error updating favorites:", error);
+    } catch {
+      // Silent error - non-critical functionality
     }
   }, [dogName, isFavorite]);
 
@@ -149,25 +184,26 @@ export default function DogDetailScreen() {
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.container}>
           <ThemedView style={styles.imageContainer}>
-            {isImageLoading ? (
+            {imageLoadingState === "loading" ? (
               <ThemedView style={styles.imageLoadingContainer}>
                 <ActivityIndicator
                   size="large"
                   color={Colors[colorScheme ?? "light"].tint}
                 />
               </ThemedView>
-            ) : (
+            ) : dogImageUrl && imageLoadingState === "loaded" ? (
               <Image
-                source={{
-                  uri:
-                    imageUrl ||
-                    `https://source.unsplash.com/300x200/?dog,${encodeURIComponent(
-                      dogName
-                    )}`,
-                }}
+                source={{ uri: dogImageUrl }}
                 style={styles.dogImage}
                 resizeMode="cover"
+                onError={() => setImageLoadingState("error")}
               />
+            ) : (
+              <ThemedView style={styles.noImageContainer}>
+                <ThemedText style={styles.noImageText}>
+                  Sorry! No image found for this dog breed.
+                </ThemedText>
+              </ThemedView>
             )}
           </ThemedView>
 
@@ -186,6 +222,7 @@ export default function DogDetailScreen() {
               <ThemedText type="title" style={styles.title}>
                 {dogName}
               </ThemedText>
+
               <ThemedText style={styles.description}>{dogInfo}</ThemedText>
 
               <TouchableOpacity
@@ -193,11 +230,12 @@ export default function DogDetailScreen() {
                 onPress={() => {
                   alert(`Opening full Wikipedia page for ${dogName}`);
                 }}
+                activeOpacity={0.8}
               >
                 <ThemedText style={styles.wikiButtonText}>
                   Read full article on Wikipedia
                 </ThemedText>
-                <IconSymbol name="arrow.up.right" size={18} color="#fff" />
+                <IconSymbol name="arrow.up.right" size={20} color="#fff" />
               </TouchableOpacity>
             </>
           )}
@@ -213,63 +251,97 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   imageContainer: {
     width: "100%",
     position: "relative",
-    marginBottom: 16,
-    borderRadius: 12,
+    marginBottom: 24,
+    borderRadius: 16,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   dogImage: {
     width: "100%",
-    height: 250,
-    borderRadius: 12,
-    marginBottom: 16,
+    height: 300,
+    borderRadius: 16,
   },
   title: {
+    fontSize: 28,
     marginBottom: 16,
+    marginTop: 8,
+    fontWeight: "700",
+    textTransform: "capitalize",
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 40,
+    minHeight: 200,
   },
   imageLoadingContainer: {
     width: "100%",
-    height: 250,
-    borderRadius: 12,
-    marginBottom: 16,
+    height: 300,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f5f5f5",
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
+    fontSize: 16,
+    opacity: 0.7,
   },
   description: {
-    lineHeight: 24,
+    lineHeight: 26,
     fontSize: 16,
-    marginBottom: 24,
+    marginBottom: 30,
+    letterSpacing: 0.3,
   },
   wikiButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#8e4b8e",
-    padding: 14,
-    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     marginTop: 10,
-    marginBottom: 20,
-    gap: 8,
+    marginBottom: 30,
+    gap: 10,
+    shadowColor: "#8e4b8e",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   wikiButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
+    fontSize: 16,
   },
   favoriteButton: {
-    padding: 10,
+    padding: 12,
+    marginRight: 6,
+  },
+  noImageContainer: {
+    width: "100%",
+    height: 300,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+  },
+  noImageText: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
+    padding: 20,
+    color: "#888",
   },
 });
