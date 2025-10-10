@@ -1,18 +1,22 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { Stack, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Animated,
   Image,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Vibration,
 } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
@@ -115,6 +119,9 @@ export default function DogDetailScreen() {
       });
   }, [dogName]);
 
+  // Animation value for heart beat effect
+  const heartScale = useRef(new Animated.Value(1)).current;
+
   const checkIfFavorite = useCallback(async () => {
     try {
       const savedFavorites = await AsyncStorage.getItem("dogFavorites");
@@ -122,13 +129,38 @@ export default function DogDetailScreen() {
         const favorites = JSON.parse(savedFavorites);
         setIsFavorite(favorites.includes(dogName));
       }
-    } catch {
-      // Silent error - non-critical functionality
+    } catch (error) {
+      console.error("Error checking favorite status:", error);
     }
   }, [dogName]);
 
+  const animateHeart = useCallback(() => {
+    // Reset scale to 1
+    heartScale.setValue(1);
+
+    // Create a sequence of animations
+    Animated.sequence([
+      Animated.timing(heartScale, {
+        toValue: 1.3,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(heartScale, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Add haptic feedback when toggling favorites
+    Vibration.vibrate(40);
+  }, [heartScale]);
+
   const toggleFavorite = useCallback(async () => {
     try {
+      // Animate heart regardless of success
+      animateHeart();
+
       const savedFavorites = await AsyncStorage.getItem("dogFavorites");
       let favorites: string[] = savedFavorites
         ? JSON.parse(savedFavorites)
@@ -140,12 +172,27 @@ export default function DogDetailScreen() {
         favorites.push(dogName);
       }
 
+      // Ensure we write to storage successfully
       await AsyncStorage.setItem("dogFavorites", JSON.stringify(favorites));
+
+      // Only update state after successful storage
       setIsFavorite(!isFavorite);
-    } catch {
-      // Silent error - non-critical functionality
+
+      // Show feedback to user
+      if (!isFavorite) {
+        // We're adding to favorites
+        Alert.alert(
+          "Added to Favorites",
+          `${dogName} has been added to your favorites!`,
+          [{ text: "OK", style: "default" }],
+          { cancelable: true }
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling favorite status:", error);
+      Alert.alert("Error", "Could not update favorites. Please try again.");
     }
-  }, [dogName, isFavorite]);
+  }, [dogName, isFavorite, animateHeart]);
 
   // Add the useEffect after all the function definitions
   useEffect(() => {
@@ -169,23 +216,34 @@ export default function DogDetailScreen() {
             <TouchableOpacity
               onPress={toggleFavorite}
               style={styles.favoriteButton}
+              activeOpacity={0.7}
             >
-              <IconSymbol
-                name={isFavorite ? "heart.fill" : "heart"}
-                size={24}
-                color={
-                  isFavorite ? "#ff4081" : Colors[colorScheme ?? "light"].icon
-                }
-              />
+              <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+                <MaterialIcons
+                  name={isFavorite ? "favorite" : "favorite-border"}
+                  size={28}
+                  color={
+                    isFavorite ? "#ff4081" : Colors[colorScheme ?? "light"].icon
+                  }
+                />
+              </Animated.View>
             </TouchableOpacity>
           ),
         }}
       />
-      <ScrollView style={styles.scrollView}>
-        <ThemedView style={styles.container}>
-          <ThemedView style={styles.imageContainer}>
+      <ScrollView
+        style={[
+          styles.scrollView,
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
+        ]}
+      >
+        <ThemedView style={styles.container} useBackground={false}>
+          <ThemedView style={styles.imageContainer} useBackground={false}>
             {imageLoadingState === "loading" ? (
-              <ThemedView style={styles.imageLoadingContainer}>
+              <ThemedView
+                style={styles.imageLoadingContainer}
+                useBackground={true}
+              >
                 <ActivityIndicator
                   size="large"
                   color={Colors[colorScheme ?? "light"].tint}
@@ -199,7 +257,7 @@ export default function DogDetailScreen() {
                 onError={() => setImageLoadingState("error")}
               />
             ) : (
-              <ThemedView style={styles.noImageContainer}>
+              <ThemedView style={styles.noImageContainer} useBackground={true}>
                 <ThemedText style={styles.noImageText}>
                   Sorry! No image found for this dog breed.
                 </ThemedText>
@@ -208,7 +266,7 @@ export default function DogDetailScreen() {
           </ThemedView>
 
           {isLoading ? (
-            <ThemedView style={styles.loadingContainer}>
+            <ThemedView style={styles.loadingContainer} useBackground={false}>
               <ActivityIndicator
                 size="large"
                 color={Colors[colorScheme ?? "light"].tint}
@@ -228,14 +286,18 @@ export default function DogDetailScreen() {
               <TouchableOpacity
                 style={styles.wikiButton}
                 onPress={() => {
-                  alert(`Opening full Wikipedia page for ${dogName}`);
+                  // Open Wikipedia in the browser
+                  const wikipediaUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(
+                    dogName
+                  )}`;
+                  WebBrowser.openBrowserAsync(wikipediaUrl);
                 }}
                 activeOpacity={0.8}
               >
                 <ThemedText style={styles.wikiButtonText}>
                   Read full article on Wikipedia
                 </ThemedText>
-                <IconSymbol name="arrow.up.right" size={20} color="#fff" />
+                <MaterialIcons name="open-in-new" size={20} color="#fff" />
               </TouchableOpacity>
             </>
           )}
@@ -290,7 +352,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   loadingText: {
     marginTop: 16,
@@ -328,6 +389,28 @@ const styles = StyleSheet.create({
   favoriteButton: {
     padding: 12,
     marginRight: 6,
+    position: "relative",
+  },
+  favoriteIndicator: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#ff4081",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  favoriteIndicatorText: {
+    color: "#fff",
+    fontSize: 8,
+    fontWeight: "bold",
   },
   noImageContainer: {
     width: "100%",
@@ -335,7 +418,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
   },
   noImageText: {
     fontSize: 16,

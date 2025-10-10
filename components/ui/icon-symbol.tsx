@@ -24,8 +24,9 @@ const MAPPING = {
   heart: "favorite_border" as MaterialIconName,
   "heart.slash": "heart_broken" as MaterialIconName,
   "xmark.circle.fill": "cancel" as MaterialIconName,
-  "arrow.up.right": "arrow_outward" as MaterialIconName,
+  "arrow.up.right": "open_in_new" as MaterialIconName,
   "chevron.left": "chevron_left" as MaterialIconName,
+  xmark: "close" as MaterialIconName,
 };
 
 // Define IconSymbolName type based on our mapping
