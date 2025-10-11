@@ -205,7 +205,7 @@ export default function DogDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          headerTitle: dogName,
+          headerTitle: "",
           headerStyle: {
             backgroundColor: Colors[colorScheme ?? "light"].primary,
           },

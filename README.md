@@ -1,6 +1,15 @@
-# Welcome to your Expo app 👋
+# Doggopedia 2025
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is a comprehensive dog breed encyclopedia app built with [Expo](https://expo.dev) that provides detailed information on various dog breeds.
+
+## App Screenshots
+
+<div align="center">
+  <img src="./assets/Google%20Play%20Store/home_screen.png" alt="Home Screen" width="200"/>
+  <img src="./assets/Google%20Play%20Store/discover.png" alt="Discover" width="200"/>
+  <img src="./assets/Google%20Play%20Store/dog_information.png" alt="Dog Information" width="200"/>
+  <img src="./assets/Google%20Play%20Store/favorites.png" alt="Favorites" width="200"/>
+</div>
 
 ## Get started
 
@@ -42,9 +51,37 @@ To learn more about developing your project with Expo, look at the following res
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
+## Features
+
+- **Comprehensive Breed Information**: Detailed profiles for numerous dog breeds
+- **Discover Mode**: Explore and discover new dog breeds
+- **Favorites**: Save your favorite breeds for quick access
+- **Beautiful UI**: Clean and intuitive user interface with dark/light mode support
+- **Smooth Animations**: Responsive and fluid user experience
+
+## Technology Stack
+
+This app is built using:
+
+- [Expo](https://expo.dev) with React Native
+- TypeScript for type safety
+- Expo Router for file-based navigation
+- Custom UI components and animations
+- MediaWiki API for fetching detailed dog breed information
+
+## Data Collection Process
+
+The app's comprehensive dog breed database was created through a two-step process:
+
+1. **Initial Breed List**: A complete list of dog breeds was scraped from Wikipedia's ["List of dog breeds"](https://en.wikipedia.org/wiki/List_of_dog_breeds) page. The scraped data is stored in `api/cleanedData.json` and includes over 400 recognized dog breeds.
+
+2. **Detailed Breed Information**: The app uses the [MediaWiki API](https://www.mediawiki.org/wiki/API:Main_page) to dynamically fetch an image and details about each dog breed.
+
+This approach ensures that the app always displays the most up-to-date and accurate information directly from Wikipedia's extensive knowledge base.
+
 ## Join the community
 
-Join our community of developers creating universal apps.
+Join our community of dog lovers and app developers:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Report an Issue](https://github.com/yangliudev/doggopedia2025/issues): Help us improve the app by reporting bugs or suggesting features.
+- [Follow for Updates](https://github.com/yangliudev): Stay informed about updates and new features.
