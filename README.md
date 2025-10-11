@@ -6,8 +6,8 @@ This is a comprehensive dog breed encyclopedia app built with [Expo](https://exp
 
 <div align="center">
   <img src="./assets/Google%20Play%20Store/home_screen.png" alt="Home Screen" width="200"/>
+   <img src="./assets/Google%20Play%20Store/dog_information.png" alt="Dog Information" width="200"/>
   <img src="./assets/Google%20Play%20Store/discover.png" alt="Discover" width="200"/>
-  <img src="./assets/Google%20Play%20Store/dog_information.png" alt="Dog Information" width="200"/>
   <img src="./assets/Google%20Play%20Store/favorites.png" alt="Favorites" width="200"/>
 </div>
 

@@ -119,7 +119,7 @@ export default function DogDetailScreen() {
       });
   }, [dogName]);
 
-  // Animation value for heart beat effect
+  // Animation value for heart button
   const heartScale = useRef(new Animated.Value(1)).current;
 
   const checkIfFavorite = useCallback(async () => {
@@ -127,7 +127,8 @@ export default function DogDetailScreen() {
       const savedFavorites = await AsyncStorage.getItem("dogFavorites");
       if (savedFavorites) {
         const favorites = JSON.parse(savedFavorites);
-        setIsFavorite(favorites.includes(dogName));
+        const isFav = favorites.includes(dogName);
+        setIsFavorite(isFav);
       }
     } catch (error) {
       console.error("Error checking favorite status:", error);
@@ -138,11 +139,21 @@ export default function DogDetailScreen() {
     // Reset scale to 1
     heartScale.setValue(1);
 
-    // Create a sequence of animations
+    // Create a more dynamic heartbeat effect
     Animated.sequence([
       Animated.timing(heartScale, {
-        toValue: 1.3,
+        toValue: 1.5,
         duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(heartScale, {
+        toValue: 0.8,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(heartScale, {
+        toValue: 1.2,
+        duration: 100,
         useNativeDriver: true,
       }),
       Animated.timing(heartScale, {
@@ -166,6 +177,8 @@ export default function DogDetailScreen() {
         ? JSON.parse(savedFavorites)
         : [];
 
+      const newFavoriteState = !isFavorite;
+
       if (isFavorite) {
         favorites = favorites.filter((name) => name !== dogName);
       } else {
@@ -176,17 +189,15 @@ export default function DogDetailScreen() {
       await AsyncStorage.setItem("dogFavorites", JSON.stringify(favorites));
 
       // Only update state after successful storage
-      setIsFavorite(!isFavorite);
+      setIsFavorite(newFavoriteState);
 
-      // Show feedback to user
-      if (!isFavorite) {
-        // We're adding to favorites
-        Alert.alert(
-          "Added to Favorites",
-          `${dogName} has been added to your favorites!`,
-          [{ text: "OK", style: "default" }],
-          { cancelable: true }
-        );
+      // Show brief visual feedback with haptic feedback
+      if (newFavoriteState) {
+        // We're adding to favorites - just animation
+        Vibration.vibrate([0, 40, 50, 40]);
+      } else {
+        // We're removing from favorites
+        Vibration.vibrate(20);
       }
     } catch (error) {
       console.error("Error toggling favorite status:", error);
@@ -212,23 +223,6 @@ export default function DogDetailScreen() {
           headerTitleStyle: {
             fontFamily: "InterTight-SemiBold",
           },
-          headerRight: () => (
-            <TouchableOpacity
-              onPress={toggleFavorite}
-              style={styles.favoriteButton}
-              activeOpacity={0.7}
-            >
-              <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-                <MaterialIcons
-                  name={isFavorite ? "favorite" : "favorite-border"}
-                  size={28}
-                  color={
-                    isFavorite ? "#ff4081" : Colors[colorScheme ?? "light"].icon
-                  }
-                />
-              </Animated.View>
-            </TouchableOpacity>
-          ),
         }}
       />
       <ScrollView
@@ -277,9 +271,28 @@ export default function DogDetailScreen() {
             </ThemedView>
           ) : (
             <>
-              <ThemedText type="title" style={styles.title}>
-                {dogName}
-              </ThemedText>
+              <ThemedView style={styles.titleContainer} useBackground={false}>
+                <ThemedText type="title" style={styles.title}>
+                  {dogName}
+                </ThemedText>
+                <TouchableOpacity
+                  onPress={toggleFavorite}
+                  style={styles.favoriteButtonInline}
+                  activeOpacity={0.7}
+                >
+                  <Animated.View style={{ transform: [{ scale: heartScale }] }}>
+                    <MaterialIcons
+                      name={isFavorite ? "favorite" : "favorite-border"}
+                      size={32}
+                      color={
+                        isFavorite
+                          ? "#ff4081"
+                          : Colors[colorScheme ?? "light"].icon
+                      }
+                    />
+                  </Animated.View>
+                </TouchableOpacity>
+              </ThemedView>
 
               <ThemedText style={styles.description}>{dogInfo}</ThemedText>
 
@@ -332,13 +345,27 @@ const styles = StyleSheet.create({
     height: 300,
     borderRadius: 16,
   },
+  titleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+    marginTop: 8,
+  },
   title: {
     fontSize: 28,
-    marginBottom: 16,
-    marginTop: 8,
     fontWeight: "700",
     textTransform: "capitalize",
+    flex: 1,
   },
+  favoriteButtonInline: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -391,27 +418,7 @@ const styles = StyleSheet.create({
     marginRight: 6,
     position: "relative",
   },
-  favoriteIndicator: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#ff4081",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  favoriteIndicatorText: {
-    color: "#fff",
-    fontSize: 8,
-    fontWeight: "bold",
-  },
+
   noImageContainer: {
     width: "100%",
     height: 300,
