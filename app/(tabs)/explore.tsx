@@ -120,7 +120,7 @@ export default function ExploreScreen() {
 
   const showPrevFact = useCallback(() => {
     setCurrentFactIndex((prevIndex) =>
-      prevIndex === 0 ? DOG_FACTS.length - 1 : prevIndex - 1
+      prevIndex === 0 ? DOG_FACTS.length - 1 : prevIndex - 1,
     );
   }, []);
 
@@ -130,7 +130,7 @@ export default function ExploreScreen() {
 
   const prevCategory = useCallback(() => {
     setSelectedCategory((prev) =>
-      prev === 0 ? DOG_CATEGORIES.length - 1 : prev - 1
+      prev === 0 ? DOG_CATEGORIES.length - 1 : prev - 1,
     );
   }, []);
 
@@ -141,7 +141,13 @@ export default function ExploreScreen() {
         { backgroundColor: Colors[colorScheme ?? "light"].background },
       ]}
     >
-      <ThemedView style={styles.heroContainer} useBackground={false}>
+      <ThemedView
+        style={[
+          styles.heroContainer,
+          { borderBottomColor: Colors[colorScheme ?? "light"].border },
+        ]}
+        useBackground={false}
+      >
         <ThemedText type="title" style={styles.heroTitle}>
           Discover Dogs
         </ThemedText>
@@ -159,7 +165,17 @@ export default function ExploreScreen() {
       </ThemedView>
 
       {/* Fun Facts Card with enhanced styling */}
-      <ThemedView style={[styles.card, styles.factCard]} useBackground={true}>
+      <ThemedView
+        style={[
+          styles.card,
+          styles.factCard,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+            borderLeftColor: Colors[colorScheme ?? "light"].tint,
+          },
+        ]}
+        useBackground={true}
+      >
         <ThemedView style={styles.cardHeader} useBackground={false}>
           <IconSymbol
             name="pawprint.fill"
@@ -180,7 +196,15 @@ export default function ExploreScreen() {
             />
           </TouchableOpacity>
 
-          <ThemedView style={styles.factTextContainer} useBackground={true}>
+          <ThemedView
+            style={[
+              styles.factTextContainer,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].surface,
+              },
+            ]}
+            useBackground={false}
+          >
             <ThemedText style={styles.factText}>
               {DOG_FACTS[currentFactIndex]}
             </ThemedText>
@@ -196,7 +220,15 @@ export default function ExploreScreen() {
         </ThemedView>
 
         <ThemedView style={styles.progressBarContainer} useBackground={false}>
-          <View style={styles.progressBar}>
+          <View
+            style={[
+              styles.progressBar,
+              {
+                backgroundColor:
+                  colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "#e0e0e0",
+              },
+            ]}
+          >
             <View
               style={[
                 styles.progressBarFill,
@@ -223,7 +255,13 @@ export default function ExploreScreen() {
       </ThemedView>
 
       <ThemedView
-        style={[styles.card, styles.categoryCard]}
+        style={[
+          styles.card,
+          styles.categoryCard,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+          },
+        ]}
         useBackground={true}
       >
         <Image
@@ -283,7 +321,14 @@ export default function ExploreScreen() {
       </ThemedView>
 
       <ThemedView
-        style={[styles.card, styles.anatomyCard]}
+        style={[
+          styles.card,
+          styles.anatomyCard,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+            borderLeftColor: Colors[colorScheme ?? "light"].icon,
+          },
+        ]}
         useBackground={true}
       >
         <ThemedView style={styles.anatomyImageContainer} useBackground={false}>
@@ -309,7 +354,16 @@ export default function ExploreScreen() {
         </ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.tipsContainer} useBackground={true}>
+      <ThemedView
+        style={[
+          styles.tipsContainer,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+            borderLeftColor: Colors[colorScheme ?? "light"].icon,
+          },
+        ]}
+        useBackground={true}
+      >
         {/* Training Tips */}
         <Collapsible title="Basic Training Tips">
           {TRAINING_TIPS.map((tip, index) => (
@@ -339,7 +393,16 @@ export default function ExploreScreen() {
       </ThemedView>
 
       {/* Quick Links */}
-      <ThemedView style={styles.quickLinksContainer} useBackground={true}>
+      <ThemedView
+        style={[
+          styles.quickLinksContainer,
+          {
+            backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+            borderLeftColor: Colors[colorScheme ?? "light"].icon,
+          },
+        ]}
+        useBackground={true}
+      >
         <ThemedView style={styles.quickLinksHeader} useBackground={false}>
           <IconSymbol
             name="heart.fill"
@@ -356,7 +419,13 @@ export default function ExploreScreen() {
             <ThemedText style={styles.quickLinkText}>
               Golden Retriever
             </ThemedText>
-            <ThemedView style={styles.quickLinkArrow} useBackground={true}>
+            <ThemedView
+              style={[
+                styles.quickLinkArrow,
+                { backgroundColor: Colors[colorScheme ?? "light"].tint },
+              ]}
+              useBackground={true}
+            >
               <IconSymbol name="chevron.right" size={16} color="#fff" />
             </ThemedView>
           </TouchableOpacity>
@@ -367,7 +436,13 @@ export default function ExploreScreen() {
             <ThemedText style={styles.quickLinkText}>
               German Shepherd
             </ThemedText>
-            <ThemedView style={styles.quickLinkArrow} useBackground={true}>
+            <ThemedView
+              style={[
+                styles.quickLinkArrow,
+                { backgroundColor: Colors[colorScheme ?? "light"].tint },
+              ]}
+              useBackground={true}
+            >
               <IconSymbol name="chevron.right" size={16} color="#fff" />
             </ThemedView>
           </TouchableOpacity>
@@ -378,7 +453,13 @@ export default function ExploreScreen() {
             <ThemedText style={styles.quickLinkText}>
               Labrador Retriever
             </ThemedText>
-            <ThemedView style={styles.quickLinkArrow} useBackground={true}>
+            <ThemedView
+              style={[
+                styles.quickLinkArrow,
+                { backgroundColor: Colors[colorScheme ?? "light"].tint },
+              ]}
+              useBackground={true}
+            >
               <IconSymbol name="chevron.right" size={16} color="#fff" />
             </ThemedView>
           </TouchableOpacity>
@@ -386,7 +467,13 @@ export default function ExploreScreen() {
       </ThemedView>
 
       <ThemedView style={styles.footer} useBackground={false}>
-        <ThemedView style={styles.footerDivider} useBackground={false} />
+        <ThemedView
+          style={[
+            styles.footerDivider,
+            { backgroundColor: Colors[colorScheme ?? "light"].border },
+          ]}
+          useBackground={false}
+        />
         <IconSymbol
           name="pawprint.fill"
           size={28}

@@ -60,7 +60,7 @@ export default function DogDetailScreen() {
       })
       .catch(() => {
         setDogInfo(
-          "Unable to load information. Please check your connection and try again."
+          "Unable to load information. Please check your connection and try again.",
         );
         setIsLoading(false);
       });
@@ -69,7 +69,7 @@ export default function DogDetailScreen() {
   const getWikipediaImage = useCallback(() => {
     setImageLoadingState("loading");
     const imageApiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
-      dogName
+      dogName,
     )}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
 
     axios
@@ -99,7 +99,8 @@ export default function DogDetailScreen() {
               } else {
                 setDogImageUrl(wikiImageUrl);
               }
-            } catch (err) {
+            } catch (error) {
+              console.error("Error while creating Wikipedia image URL:", error);
               setDogImageUrl(wikiImageUrl); // Fallback to original URL
             }
 
@@ -252,7 +253,12 @@ export default function DogDetailScreen() {
               />
             ) : (
               <ThemedView style={styles.noImageContainer} useBackground={true}>
-                <ThemedText style={styles.noImageText}>
+                <ThemedText
+                  style={[
+                    styles.noImageText,
+                    { color: Colors[colorScheme ?? "light"].muted },
+                  ]}
+                >
                   Sorry! No image found for this dog breed.
                 </ThemedText>
               </ThemedView>
@@ -297,11 +303,14 @@ export default function DogDetailScreen() {
               <ThemedText style={styles.description}>{dogInfo}</ThemedText>
 
               <TouchableOpacity
-                style={styles.wikiButton}
+                style={[
+                  styles.wikiButton,
+                  { backgroundColor: Colors[colorScheme ?? "light"].tint },
+                ]}
                 onPress={() => {
                   // Open Wikipedia in the browser
                   const wikipediaUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(
-                    dogName
+                    dogName,
                   )}`;
                   WebBrowser.openBrowserAsync(wikipediaUrl);
                 }}
@@ -395,14 +404,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#8e4b8e",
+    backgroundColor: Colors.light.tint,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
     marginTop: 10,
     marginBottom: 30,
     gap: 10,
-    shadowColor: "#8e4b8e",
+    shadowColor: Colors.light.tint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,

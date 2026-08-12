@@ -59,11 +59,11 @@ export default function HomeScreen() {
 
       const searchTerm = text.toLowerCase();
       const filtered = dogBreeds.filter((breed) =>
-        breed.toLowerCase().includes(searchTerm)
+        breed.toLowerCase().includes(searchTerm),
       );
       setFilteredBreeds(filtered);
     },
-    [dogBreeds]
+    [dogBreeds],
   );
 
   const navigateToDogDetail = (dogName: string) => {
@@ -74,8 +74,21 @@ export default function HomeScreen() {
     });
   };
   const renderSectionHeader = (letter: string) => (
-    <ThemedView style={styles.sectionHeader}>
-      <ThemedText type="subtitle" style={styles.sectionHeaderText}>
+    <ThemedView
+      style={[
+        styles.sectionHeader,
+        {
+          backgroundColor: Colors[colorScheme ?? "light"].primary,
+        },
+      ]}
+    >
+      <ThemedText
+        type="subtitle"
+        style={[
+          styles.sectionHeaderText,
+          { color: Colors[colorScheme ?? "light"].text },
+        ]}
+      >
         {letter}
       </ThemedText>
     </ThemedView>
@@ -83,14 +96,17 @@ export default function HomeScreen() {
 
   const renderAlphabeticalList = () => {
     // Group dogs by first letter
-    const groupedDogs = filteredBreeds.reduce((acc, dog) => {
-      const firstLetter = dog.charAt(0).toUpperCase();
-      if (!acc[firstLetter]) {
-        acc[firstLetter] = [];
-      }
-      acc[firstLetter].push(dog);
-      return acc;
-    }, {} as Record<string, string[]>);
+    const groupedDogs = filteredBreeds.reduce(
+      (acc, dog) => {
+        const firstLetter = dog.charAt(0).toUpperCase();
+        if (!acc[firstLetter]) {
+          acc[firstLetter] = [];
+        }
+        acc[firstLetter].push(dog);
+        return acc;
+      },
+      {} as Record<string, string[]>,
+    );
 
     // Get sorted letters
     const letters = Object.keys(groupedDogs).sort();
@@ -108,7 +124,14 @@ export default function HomeScreen() {
                 style={styles.dogItem}
                 onPress={() => navigateToDogDetail(dog)}
               >
-                <ThemedView style={styles.dogCard}>
+                <ThemedView
+                  style={[
+                    styles.dogCard,
+                    {
+                      backgroundColor: Colors[colorScheme ?? "light"].surface,
+                    },
+                  ]}
+                >
                   <ThemedText>{dog}</ThemedText>
                   <IconSymbol
                     name="chevron.right"
@@ -125,9 +148,26 @@ export default function HomeScreen() {
   };
 
   return (
-    <ThemedView style={styles.mainContainer}>
-      <ThemedView style={styles.searchContainer}>
-        <ThemedView style={styles.searchInputWrapper}>
+    <ThemedView
+      style={[
+        styles.mainContainer,
+        { backgroundColor: Colors[colorScheme ?? "light"].background },
+      ]}
+    >
+      <ThemedView
+        style={[
+          styles.searchContainer,
+          { borderBottomColor: Colors[colorScheme ?? "light"].border },
+        ]}
+      >
+        <ThemedView
+          style={[
+            styles.searchInputWrapper,
+            {
+              backgroundColor: Colors[colorScheme ?? "light"].searchBackground,
+            },
+          ]}
+        >
           <IconSymbol
             name="magnifyingglass"
             size={20}
@@ -199,7 +239,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "rgba(0, 0, 0, 0.08)",
   },
   searchInputWrapper: {
     flexDirection: "row",

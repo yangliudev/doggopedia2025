@@ -30,13 +30,7 @@ export default function FavoritesScreen() {
   const colorScheme = useColorScheme();
 
   // Use useFocusEffect to refresh favorites when the screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      loadFavorites();
-    }, [])
-  );
-
-  const loadFavorites = async () => {
+  const loadFavorites = useCallback(async () => {
     try {
       setIsLoading(true);
       const savedFavorites = await AsyncStorage.getItem("dogFavorites");
@@ -63,13 +57,19 @@ export default function FavoritesScreen() {
       console.error("Failed to load favorites:", error);
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites]),
+  );
 
   const fetchDogInfo = async (dogName: string, index: number) => {
     // Fetch image
     try {
       const imageApiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
-        dogName
+        dogName,
       )}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
 
       const imageResponse = await axios.get(imageApiUrl, {
@@ -141,18 +141,18 @@ export default function FavoritesScreen() {
       // Get current favorite names only
       const favoriteNames = favorites.map((dog) => dog.name);
       const updatedFavoriteNames = favoriteNames.filter(
-        (name) => name !== dogName
+        (name) => name !== dogName,
       );
 
       // Update AsyncStorage
       await AsyncStorage.setItem(
         "dogFavorites",
-        JSON.stringify(updatedFavoriteNames)
+        JSON.stringify(updatedFavoriteNames),
       );
 
       // Update state
       setFavorites((prevFavorites) =>
-        prevFavorites.filter((dog) => dog.name !== dogName)
+        prevFavorites.filter((dog) => dog.name !== dogName),
       );
     } catch (error) {
       console.error("Failed to remove favorite:", error);
@@ -180,7 +180,13 @@ export default function FavoritesScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.emptyContainer} useBackground={true}>
+      <ThemedView
+        style={[
+          styles.emptyContainer,
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
+        ]}
+        useBackground={true}
+      >
         <ActivityIndicator
           size="large"
           color={Colors[colorScheme ?? "light"].tint}
@@ -194,7 +200,13 @@ export default function FavoritesScreen() {
 
   if (favorites.length === 0) {
     return (
-      <ThemedView style={styles.emptyContainer} useBackground={true}>
+      <ThemedView
+        style={[
+          styles.emptyContainer,
+          { backgroundColor: Colors[colorScheme ?? "light"].background },
+        ]}
+        useBackground={true}
+      >
         <IconSymbol
           name="heart.slash"
           size={80}
@@ -226,7 +238,13 @@ export default function FavoritesScreen() {
       ]}
       useBackground={true}
     >
-      <ThemedView style={styles.headerContainer} useBackground={false}>
+      <ThemedView
+        style={[
+          styles.headerContainer,
+          { borderBottomColor: Colors[colorScheme ?? "light"].border },
+        ]}
+        useBackground={false}
+      >
         <ThemedText type="title" style={styles.headerTitle}>
           My Favorite Dogs
         </ThemedText>
@@ -245,7 +263,16 @@ export default function FavoritesScreen() {
             onPress={() => navigateToDetail(item.name)}
             activeOpacity={0.7}
           >
-            <ThemedView style={styles.favoriteCard} useBackground={true}>
+            <ThemedView
+              style={[
+                styles.favoriteCard,
+                {
+                  backgroundColor:
+                    Colors[colorScheme ?? "light"].cardBackground,
+                },
+              ]}
+              useBackground={true}
+            >
               {/* Card Image */}
               <ThemedView
                 style={styles.cardImageContainer}
@@ -270,7 +297,15 @@ export default function FavoritesScreen() {
                   />
                 ) : (
                   <ThemedView
-                    style={styles.imagePlaceholder}
+                    style={[
+                      styles.imagePlaceholder,
+                      {
+                        backgroundColor:
+                          colorScheme === "dark"
+                            ? "rgba(255,255,255,0.04)"
+                            : "rgba(0,0,0,0.05)",
+                      },
+                    ]}
                     useBackground={false}
                   >
                     <IconSymbol
@@ -319,7 +354,12 @@ export default function FavoritesScreen() {
                     style={styles.readMoreButton}
                     onPress={() => navigateToDetail(item.name)}
                   >
-                    <ThemedText style={styles.readMoreText}>
+                    <ThemedText
+                      style={[
+                        styles.readMoreText,
+                        { color: Colors[colorScheme ?? "light"].tint },
+                      ]}
+                    >
                       Read More
                     </ThemedText>
                     <IconSymbol
