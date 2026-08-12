@@ -1,5 +1,4 @@
-import { router } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -13,66 +12,18 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useHomeViewModel } from "./useHomeViewModel";
 
 export default function HomeScreen() {
-  const [dogBreeds, setDogBreeds] = useState<string[]>([]);
-  const [filteredBreeds, setFilteredBreeds] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const {
+    searchQuery,
+    isLoading,
+    sections,
+    handleSearch,
+    navigateToDogDetail,
+  } = useHomeViewModel();
   const colorScheme = useColorScheme();
 
-  // Use async import to load JSON data
-  useEffect(() => {
-    const loadDogBreedsData = async () => {
-      try {
-        // Modern dynamic import for JSON data
-        const wikiJsonObj = await import("@/api/cleanedData.json");
-        const wikiJsonString = wikiJsonObj.default[0]?.dogBreeds;
-
-        if (wikiJsonString) {
-          const jsonDataArray = wikiJsonString.split(", ");
-          const cleanedBreeds = jsonDataArray
-            .filter((breed) => breed && breed.trim()) // Filter out empty strings
-            .map((breed) => breed.trim()); // Clean up whitespace
-
-          setDogBreeds(cleanedBreeds);
-          setFilteredBreeds(cleanedBreeds);
-        }
-      } catch (error) {
-        console.error("Error loading dog breeds data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadDogBreedsData();
-  }, []);
-
-  // Search functionality using memoization for better performance
-  const handleSearch = useCallback(
-    (text: string) => {
-      setSearchQuery(text);
-      if (!text) {
-        setFilteredBreeds(dogBreeds);
-        return;
-      }
-
-      const searchTerm = text.toLowerCase();
-      const filtered = dogBreeds.filter((breed) =>
-        breed.toLowerCase().includes(searchTerm),
-      );
-      setFilteredBreeds(filtered);
-    },
-    [dogBreeds],
-  );
-
-  const navigateToDogDetail = (dogName: string) => {
-    // Navigate to the detail page with the dog name as a parameter
-    router.push({
-      pathname: "/detail",
-      params: { name: dogName },
-    });
-  };
   const renderSectionHeader = (letter: string) => (
     <ThemedView
       style={[
@@ -94,58 +45,40 @@ export default function HomeScreen() {
     </ThemedView>
   );
 
-  const renderAlphabeticalList = () => {
-    // Group dogs by first letter
-    const groupedDogs = filteredBreeds.reduce(
-      (acc, dog) => {
-        const firstLetter = dog.charAt(0).toUpperCase();
-        if (!acc[firstLetter]) {
-          acc[firstLetter] = [];
-        }
-        acc[firstLetter].push(dog);
-        return acc;
-      },
-      {} as Record<string, string[]>,
-    );
-
-    // Get sorted letters
-    const letters = Object.keys(groupedDogs).sort();
-
-    return (
-      <FlatList
-        data={letters}
-        keyExtractor={(item) => item}
-        renderItem={({ item: letter }) => (
-          <>
-            {renderSectionHeader(letter)}
-            {groupedDogs[letter].map((dog) => (
-              <TouchableOpacity
-                key={dog}
-                style={styles.dogItem}
-                onPress={() => navigateToDogDetail(dog)}
+  const renderAlphabeticalList = () => (
+    <FlatList
+      data={sections}
+      keyExtractor={(item) => item.title}
+      renderItem={({ item }) => (
+        <>
+          {renderSectionHeader(item.title)}
+          {item.dogs.map((dog) => (
+            <TouchableOpacity
+              key={dog}
+              style={styles.dogItem}
+              onPress={() => navigateToDogDetail(dog)}
+            >
+              <ThemedView
+                style={[
+                  styles.dogCard,
+                  {
+                    backgroundColor: Colors[colorScheme ?? "light"].surface,
+                  },
+                ]}
               >
-                <ThemedView
-                  style={[
-                    styles.dogCard,
-                    {
-                      backgroundColor: Colors[colorScheme ?? "light"].surface,
-                    },
-                  ]}
-                >
-                  <ThemedText>{dog}</ThemedText>
-                  <IconSymbol
-                    name="chevron.right"
-                    size={20}
-                    color={Colors[colorScheme ?? "light"].icon}
-                  />
-                </ThemedView>
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-      />
-    );
-  };
+                <ThemedText>{dog}</ThemedText>
+                <IconSymbol
+                  name="chevron.right"
+                  size={20}
+                  color={Colors[colorScheme ?? "light"].icon}
+                />
+              </ThemedView>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+    />
+  );
 
   return (
     <ThemedView
@@ -209,7 +142,7 @@ export default function HomeScreen() {
             Loading dog breeds...
           </ThemedText>
         </ThemedView>
-      ) : filteredBreeds.length === 0 ? (
+      ) : sections.length === 0 ? (
         <ThemedView style={styles.noResultsContainer}>
           <IconSymbol
             name="magnifyingglass"

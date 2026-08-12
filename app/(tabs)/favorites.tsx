@@ -1,8 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import { Image } from "expo-image";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import { router } from "expo-router";
+import React from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,148 +14,11 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-
-interface DogInfo {
-  name: string;
-  imageUrl: string | null;
-  description: string;
-  isLoading: boolean;
-}
+import { useFavoritesViewModel } from "./useFavoritesViewModel";
 
 export default function FavoritesScreen() {
-  const [favorites, setFavorites] = useState<DogInfo[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { favorites, isLoading, removeFavorite } = useFavoritesViewModel();
   const colorScheme = useColorScheme();
-
-  // Use useFocusEffect to refresh favorites when the screen is focused
-  const loadFavorites = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const savedFavorites = await AsyncStorage.getItem("dogFavorites");
-      if (savedFavorites) {
-        const favoriteNames = JSON.parse(savedFavorites) as string[];
-
-        // Initialize with names only
-        const initialFavorites = favoriteNames.map((name) => ({
-          name,
-          imageUrl: null,
-          description: "",
-          isLoading: true,
-        }));
-
-        setFavorites(initialFavorites);
-
-        // Fetch details for each favorite
-        favoriteNames.forEach((name, index) => {
-          fetchDogInfo(name, index);
-        });
-      }
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Failed to load favorites:", error);
-      setIsLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadFavorites();
-    }, [loadFavorites]),
-  );
-
-  const fetchDogInfo = async (dogName: string, index: number) => {
-    // Fetch image
-    try {
-      const imageApiUrl = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
-        dogName,
-      )}&prop=pageimages&format=json&pithumbsize=500&origin=*`;
-
-      const imageResponse = await axios.get(imageApiUrl, {
-        headers: { "User-Agent": "Doggopedia/1.0 (educational project)" },
-      });
-
-      let imageUrl = null;
-      if (imageResponse.data?.query?.pages) {
-        const pages = imageResponse.data.query.pages;
-        const pageId = Object.keys(pages)[0];
-
-        if (pageId && pages[pageId]?.thumbnail?.source) {
-          const wikiImageUrl = pages[pageId].thumbnail.source;
-          const matches = wikiImageUrl.match(/\/([^\/]+)\/([^\/]+)$/);
-          if (matches && matches[1] && matches[2]) {
-            const sizePrefixRemoved = matches[2].replace(/^\d+px-/, "");
-            imageUrl = `https://wsrv.nl/?url=https://commons.wikimedia.org/wiki/Special:FilePath/${sizePrefixRemoved}&w=300&h=200&fit=cover&output=webp`;
-          } else {
-            imageUrl = wikiImageUrl;
-          }
-        }
-      }
-
-      // Fetch brief description
-      const infoApiUrl = `https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=${dogName}&origin=*`;
-      const infoResponse = await axios.get(infoApiUrl, {
-        headers: { "User-Agent": "Doggopedia/1.0 (educational project)" },
-      });
-
-      let description = "";
-      if (infoResponse.data?.query?.pages) {
-        const responseData = infoResponse.data.query.pages;
-        const values = Object.values(responseData) as { extract?: string }[];
-        description = values[0]?.extract || "";
-
-        // Truncate description for card preview
-        if (description.length > 120) {
-          description = description.substring(0, 120) + "...";
-        }
-      }
-
-      // Update state with the new information
-      setFavorites((prevFavorites) => {
-        const updatedFavorites = [...prevFavorites];
-        updatedFavorites[index] = {
-          ...updatedFavorites[index],
-          imageUrl,
-          description,
-          isLoading: false,
-        };
-        return updatedFavorites;
-      });
-    } catch (error) {
-      console.error(`Error fetching info for ${dogName}:`, error);
-      // Mark as not loading even if there was an error
-      setFavorites((prevFavorites) => {
-        const updatedFavorites = [...prevFavorites];
-        updatedFavorites[index] = {
-          ...updatedFavorites[index],
-          isLoading: false,
-        };
-        return updatedFavorites;
-      });
-    }
-  };
-
-  const removeFavorite = async (dogName: string) => {
-    try {
-      // Get current favorite names only
-      const favoriteNames = favorites.map((dog) => dog.name);
-      const updatedFavoriteNames = favoriteNames.filter(
-        (name) => name !== dogName,
-      );
-
-      // Update AsyncStorage
-      await AsyncStorage.setItem(
-        "dogFavorites",
-        JSON.stringify(updatedFavoriteNames),
-      );
-
-      // Update state
-      setFavorites((prevFavorites) =>
-        prevFavorites.filter((dog) => dog.name !== dogName),
-      );
-    } catch (error) {
-      console.error("Failed to remove favorite:", error);
-    }
-  };
 
   const confirmRemove = (dogName: string) => {
     Alert.alert("Remove Favorite", `Remove ${dogName} from your favorites?`, [
@@ -171,7 +32,6 @@ export default function FavoritesScreen() {
   };
 
   const navigateToDetail = (dogName: string) => {
-    // Navigate to the detail page with the dog name as a parameter
     router.push({
       pathname: "/detail",
       params: { name: dogName },
